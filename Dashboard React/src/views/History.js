@@ -163,13 +163,43 @@ function History() {
         const index = allBars.indexOf(bar);
         if (index !== -1 && chartState.labels[index]) {
           const hourLabel = chartState.labels[index];
-          const dLabels = [], dSeries = [];
+
+          const minuteBucket = {};
+
           rawFileData.labels.forEach((l, i) => {
+
             if (l.startsWith(hourLabel.split(":")[0])) {
-              dLabels.push(l);
-              dSeries.push(rawFileData.series[0][i]);
+
+              // เอาแค่ HH:MM
+              const minute = l.substring(0,5);
+
+              if (!minuteBucket[minute]) {
+                minuteBucket[minute] = { sum: 0, count: 0 };
+              }
+
+              minuteBucket[minute].sum += rawFileData.series[0][i];
+              minuteBucket[minute].count += 1;
             }
+
           });
+
+          const dLabels = [];
+          const dSeries = [];
+
+          Object.keys(minuteBucket)
+            .sort()
+            .forEach(min => {
+
+              dLabels.push(min);
+
+              dSeries.push(
+                Math.round(
+                  minuteBucket[min].sum /
+                  minuteBucket[min].count
+                )
+              );
+
+            });
           if (dLabels.length > 0) {
             setSelectedHour(hourLabel);
             setDetailChart({ labels: dLabels, series: [dSeries] });

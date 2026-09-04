@@ -1,53 +1,62 @@
 from multiprocessing import Process, freeze_support
+import os
 from camera_worker import run_camera
 
 # -------------------------
-# CAMERA CONFIGURATION
+# VIDEO FOLDER
+VIDEO_FOLDER = "camset"
 
-# key   = Camera_ID (ใช้ตรงกับ DB)
-# value = stream source (URL หรือ device index)
-CAMERAS = {
-    "CAM01": "http://100.66.186.93:8080/video",  # IP Camera
-    "CAM02": 0,                                   # Webcam / USB Camera
-    "CAM03": "rtsp://admin:L2120C9E@192.168.50.96:554/cam/realmonitor?channel=1&subtype=0",
-    "CAM04": "rtsp://admin:L2120C9E@192.168.50.96:554/cam/realmonitor?channel=1&subtype=1"
-}
+# อ่านไฟล์วิดีโอ
+video_files = [
+    os.path.join(VIDEO_FOLDER, f)
+    for f in os.listdir(VIDEO_FOLDER)
+    if f.endswith((".mp4", ".avi", ".mov"))
+]
 
+# สร้าง camera config
+CAMERAS = {f"CAM{str(i+2).zfill(2)}": video for i, video in enumerate(video_files)}
 
+# -------------------------
 def start_camera_process(camera_id, stream_url):
-    """สร้าง Process แยกสำหรับกล้องแต่ละตัว  1 camera = 1 process"""
-    process = Process(
+
+    p = Process(
         target=run_camera,
         args=(camera_id, stream_url),
         daemon=True
     )
-    process.start()
-    return process
+
+    p.start()
+    return p
+
 
 # -------------------------
-# MAIN
 if __name__ == "__main__":
-    print("[@] Starting multi-camera detection system")
+
+    freeze_support()
+
+    print("[@] Starting multi-video detection system")
 
     processes = []
 
     for cam_id, url in CAMERAS.items():
-        print(f"[+] Launching {cam_id} ...")
+
+        #print(f"[+] Launching {cam_id} : {url}")
+
         p = start_camera_process(cam_id, url)
+
         processes.append(p)
 
     try:
-        # ทำให้ main process ยังทำงานอยู่
-        # และรอ child processes ทั้งหมด
+
         for p in processes:
             p.join()
 
     except KeyboardInterrupt:
-        # กรณีกด Ctrl + C
-        print("\n[!] Stopping all camera processes...")
+
+        print("\n[!] Stopping all processes")
 
         for p in processes:
-            p.terminate()   # สั่งหยุด process
+            p.terminate()
             p.join()
 
-        print("[✓] All processes stopped safely")
+        print("[✓] System stopped")

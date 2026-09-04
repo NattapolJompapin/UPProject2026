@@ -40,3 +40,6 @@ python edge_multi.py
 หลังเข้าใช้งานจะได้ คำสั่งไปรัน
 ngrok config add-authtoken 39QWGrnLEL8mDvCi4JWkDgrWUJe_6ZxHjDjJCM74JERv4cvWE -->
 ngrok http 3001
+
+
+
